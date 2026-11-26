@@ -1,16 +1,32 @@
-
 import GlobalStyle from "./styles/GlobalStyle.tsx";
 import { ThemeProvider } from "styled-components";
-import { lightTheme } from "./styles/theme.ts";
+import { darkTheme, lightTheme } from "./styles/theme.ts";
 import { RouterProvider } from "react-router";
 import GetRouter from "./router/GetRouter.tsx";
+import { ThemeContext, type ThemeType } from "./contexts/theme/ThemeContext.ts";
+import { useEffect, useState } from "react";
 
 function App() {
+    const [theme, setTheme] = useState<ThemeType>(() => {
+        const savedTheme = localStorage.getItem("theme");
+        return savedTheme === "dark" ? "dark" : "light";
+    });
+
+    const onChangeTheme = () => {
+        setTheme(prev => (prev === "light" ? "dark" : "light"));
+    };
+
+    useEffect(() => {
+        localStorage.setItem("theme", theme);
+    }, [theme]);
+
     return (
-        <ThemeProvider theme={lightTheme}>
-            <GlobalStyle />
-            <RouterProvider router={GetRouter} />
-        </ThemeProvider>
+        <ThemeContext.Provider value={{ theme, onChangeTheme }}>
+            <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
+                <GlobalStyle />
+                <RouterProvider router={GetRouter} />
+            </ThemeProvider>
+        </ThemeContext.Provider>
     );
 }
 
