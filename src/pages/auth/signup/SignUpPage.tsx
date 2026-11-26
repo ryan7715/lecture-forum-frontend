@@ -3,8 +3,10 @@ import InputGroup from "../../../components/common/input/InputGroup.tsx";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SelectGroup, { type OptionType } from "../../../components/common/select/SelectGroup.tsx";
-import { type CreateUserInputType, createUserSchema } from "../../../scheams/auth/signUpSchema.ts";
-import { GenderType } from "../../../types/user.types.ts";
+import { GenderType } from "../../../types/user.type.ts";
+import Button from "../../../components/common/button/Button.tsx";
+import { type CreateUserInputType, createUserSchema } from "../../../schemas/auth/signUpSchema.ts";
+
 
 const AuthContainer = styled.div`
     display: flex;
@@ -39,11 +41,20 @@ const AuthSubTitle = styled.h6`
     margin-bottom: 32px;
 `;
 
+const AuthRootErrorMessage = styled.p`
+    font-size: 14px;
+    text-align: center;
+    color: ${props => props.theme.color.error};
+    font-weight: 500;
+    margin-bottom: 50px;
+`;
+
 function SignUpPage() {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        setError,
+        formState: { errors, isSubmitting },
     } = useForm<CreateUserInputType>({
         resolver: zodResolver(createUserSchema), // react-hook-form과 zod 연결
         mode: "onBlur", // 언제 검증할 것인가를 정하는 옵션
@@ -110,6 +121,16 @@ function SignUpPage() {
                     registerObj={register("gender")}
                     options={options}
                 />
+
+                {errors.root && <AuthRootErrorMessage>{errors.root.message}</AuthRootErrorMessage>}
+
+                <Button
+                    color={"primary"}
+                    variant={"contained"}
+                    type={"submit"}
+                    disabled={isSubmitting}>
+                    회원가입
+                </Button>
             </AuthFormCard>
         </AuthContainer>
     );
