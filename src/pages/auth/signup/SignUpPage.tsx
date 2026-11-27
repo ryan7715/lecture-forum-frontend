@@ -79,7 +79,7 @@ function SignUpPage() {
         <AuthContainer>
             <AuthFormCard onSubmit={handleSubmit(onSubmit)}>
                 <AuthTitle>회원가입</AuthTitle>
-                <AuthSubTitle>토론대난투에 오신 것을 환영합니다!</AuthSubTitle>
+                <AuthSubTitle>토론 대난투에 오신 것을 환영합니다!</AuthSubTitle>
                 <InputGroup
                     label={"아이디"}
                     id={"username"}
