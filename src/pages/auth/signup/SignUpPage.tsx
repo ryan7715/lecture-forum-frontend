@@ -91,12 +91,38 @@ function SignUpPage() {
                 body: JSON.stringify(submitData),   // 객체를 그대로 body에 담아서 보낼 수 없고, JSON.stringify()를 통해 JSON 형식의 string으로 변환
             });
 
+            // fetch는 백엔드가 400대나 500대나 오류임을 표시해도,
+            // "성공"으로 생각함 -> 어쩄든 응답을 받았기 때문에
+
             // 백엔드에서 보내준 응답(string)을 JSON으로 파싱함
-            const result = await response.json()
+            const result = await response.json();
+
+            if (!result.ok) {
+                // 에러를 일으켜서 catch절을 실행시키는 명령
+                throw new Error(result.message || "회원가입 중 오류가 발생했습니다.")
+            }
 
             alert("회원가입이 완료되었습니다. 로그인을 진행해주세요")
             navigate("/auth/signin");
         } catch (error) {
+            if (error instanceof Error) {
+                const errorMessage = error.message;
+
+                if (errorMessage === "이미 사용 중인 아이디입니다.") {
+                    setError("username", { message: errorMessage});
+                    return;
+                } else if (errorMessage === "이미 사용 중인 이메일입니다.") {
+                    setError("email", { message: errorMessage});
+                    return;
+                } else if (errorMessage === "이미 사용 중인 닉네임입니다.") {
+                    setError("nickname", { message: errorMessage});
+                    return;
+                } else {
+                    setError("root", { message:errorMessage});
+                    return;
+                }
+            }
+
             setError( "root", { message: "회원가입이 실패했습니다. 다시 시도해주세요." });
 
         }
