@@ -1,71 +1,37 @@
-import styled from "styled-components";
 import InputGroup from "../../../components/common/input/InputGroup.tsx";
 import { useForm } from "react-hook-form";
+import { type CreateUserInputType, createUserSchema } from "../../../schemas/auth/signUpSchema.ts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import SelectGroup, { type OptionType } from "../../../components/common/select/SelectGroup.tsx";
 import { GenderType } from "../../../types/user.type.ts";
 import Button from "../../../components/common/button/Button.tsx";
-import { type CreateUserInputType, createUserSchema } from "../../../schemas/auth/signUpSchema.ts";
-import {useNavigate} from "react-router";
-
-
-const AuthContainer = styled.div`
-    display: flex;
-    justify-content: center;
-    align-items: center;
-`;
-
-const AuthFormCard = styled.form`
-    width: 100%;
-    max-width: 480px;
-    background-color: ${props => props.theme.color.background.paper};
-    border-radius: 16px;
-    border: 1px solid ${props => props.theme.color.divider};
-    padding: 40px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-`;
-
-const AuthTitle = styled.h1`
-    font-size: 28px;
-    font-weight: 800;
-    color: ${props => props.theme.color.primary};
-    text-align: center;
-    margin-bottom: -15px;
-`;
-
-const AuthSubTitle = styled.h6`
-    font-size: 15px;
-    color: ${props => props.theme.color.text.disabled};
-    text-align: center;
-    margin-bottom: 32px;
-`;
-
-const AuthRootErrorMessage = styled.p`
-    font-size: 14px;
-    text-align: center;
-    color: ${props => props.theme.color.error};
-    font-weight: 500;
-    margin-bottom: 50px;
-`;
+import { useNavigate } from "react-router";
+import axiosInstance from "../../../api/axiosInstance.ts";
+import * as axios from "axios";
+import {
+    AuthContainer,
+    AuthFormCard,
+    AuthRootErrorMessage,
+    AuthSubTitle,
+    AuthTitle,
+} from "../../../styles/AuthStyles.tsx";
 
 function SignUpPage() {
-    const navigate = useNavigate()
+    const navigate = useNavigate();
 
-    // register: input에 react-hook-form의 기능들을 등록할 때 사용할 수 있는 기능
-    // handleSubmit: 전송할 때 사용할 수 있는 기능 9모든 값에 대해 검증 후 전송하는 기능을 제공)
-    // setError: 에러 메세지 내용을 우리가 수동으로 입력하고 싶을때 사용
-    // formState 중 errors : 여러 메세지 자체를 저장하고 있는 저장소 => root, 우리가 제공한 항목들
-    //         중 isSubmitting : 전송 중임을 표현하는 boolean 변수 (전송 중은 true, 아닐 땐 false)
+    // register : input에 react-hook-form의 기능들을 등록할 때 사용할 수 있는 기능
+    // handleSubmit : 전송할 때 사용할 수 있는 기능 (모든 값에 대해 검증 후 전송하는 기능을 제공)
+    // setError : 에러 메세지 내용을 우리가 수동으로 입력하고 싶을 때 사용
+    // formState 중 errors : 에러 메세지 자체를 저장하고 있는 저장소 => root, 우리가 제공한 항목들
+    //           중 isSubmitting : 전송 중임을 표현하는 boolean 변수 (전송 중은 true, 아닐 땐 false)
     const {
         register,
         handleSubmit,
         setError,
         formState: { errors, isSubmitting },
     } = useForm<CreateUserInputType>({
-        resolver: zodResolver(createUserSchema),     // react-hook-form과 zod 연결
-        mode: "onBlur",                             // 언제 검증할 것인가를 정하는 옵션
+        resolver: zodResolver(createUserSchema), // react-hook-form과 zod 연결
+        mode: "onBlur", // 언제 검증할 것인가를 정하는 옵션
     });
 
     const options: OptionType[] = [
@@ -76,64 +42,44 @@ function SignUpPage() {
     const onSubmit = async (input: CreateUserInputType) => {
         try {
             // 전송에 대한 내용을 기재하면 되는데, 그대로 데이터를 전달할 것인가?
-            // 프론트엔드에서'만' 필요한 confirmPassword 항목이 있으나, 이것을 제외하고 전송
+            // 프론트엔드에서'만' 필요한 confirmPassword 항목이 있으니, 이것을 제외하고 전송
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { confirmPassword, ...submitData } = input;
 
-            // 사용자가 적은 내용을 함께 fetch르르통해 보내줘야 함 => 사용자가 적은 내용은 HTTP 메세지 중 body
-            // fetch(주소, 옵션) -> 주소는 필수값, 옵션은 선택값
-            // 옵션 자리에는 객체 { method, headers, body }
-            const response = await fetch("http://localhost:8000/user/create", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(submitData),   // 객체를 그대로 body에 담아서 보낼 수 없고, JSON.stringify()를 통해 JSON 형식의 string으로 변환
-            });
+            // fetch()로 통신하면, 백엔드가 전달해주는 response가 존재하기만 하면 성공으로 판단하지만,
+            // axios로 통신을 하면, 백엔드가 2xx대 성공 코드를 전달해주어야만 성공으로 판단함
+            // 이외의 실패는 catch로 처리해줘야 함
+            await axiosInstance.post("/user/create", submitData);
 
-            // fetch는 백엔드가 400대나 500대나 오류임을 표시해도,
-            // "성공"으로 생각함 -> 어쩄든 응답을 받았기 때문에
+            // 성공을 했을 때 백엔드가 전달해준 내용은 response.data에 객체 상태로 존재함
+            // (axios는 파싱(가공)을 자동으로 해줌)
 
-            // 백엔드에서 보내준 응답(string)을 JSON으로 파싱함
-            const result = await response.json();
-
-            if (!result.ok) {
-                // 에러를 일으켜서 catch절을 실행시키는 명령
-                throw new Error(result.message || "회원가입 중 오류가 발생했습니다.")
-            }
-
-            alert("회원가입이 완료되었습니다. 로그인을 진행해주세요")
+            alert("회원가입이 완료되었습니다. 로그인을 진행해주세요.");
             navigate("/auth/signin");
         } catch (error) {
-            if (error instanceof Error) {
-                const errorMessage = error.message;
+            // 기본 에러메세지를 미리 마련
+            let errorMessage = "회원가입 중 오류가 발생했습니다.";
 
-                if (errorMessage === "이미 사용 중인 아이디입니다.") {
-                    setError("username", { message: errorMessage});
-                    return;
-                } else if (errorMessage === "이미 사용 중인 이메일입니다.") {
-                    setError("email", { message: errorMessage});
-                    return;
-                } else if (errorMessage === "이미 사용 중인 닉네임입니다.") {
-                    setError("nickname", { message: errorMessage});
-                    return;
-                } else {
-                    setError("root", { message:errorMessage});
-                    return;
-                }
+            // 지금 catch 된 error가 axios의 에러인지 판별
+            if (axios.isAxiosError(error)) {
+                // axios에서 발생된 에러라면, 백엔드에서 제공한 내용이 error.response.data.message 에 존재
+                // 백엔드에서 전달해준 내용을 errorMessage에 저장
+                errorMessage = error.response?.data?.message || errorMessage;
+            } else if (error instanceof Error) {
+                // axios에서 발생된 에러가 아닌, 자바스크립트 표준 에러라면
+                // error.message에 담긴 에러 내용을 errorMessage에 저장
+                errorMessage = error.message;
             }
 
-            setError( "root", { message: "회원가입이 실패했습니다. 다시 시도해주세요." });
-
+            setError("root", { message: errorMessage });
         }
     };
-
 
     return (
         <AuthContainer>
             <AuthFormCard onSubmit={handleSubmit(onSubmit)}>
                 <AuthTitle>회원가입</AuthTitle>
-                <AuthSubTitle>토론 대난투에 오신 것을 환영합니다!</AuthSubTitle>
+                <AuthSubTitle>토론대난투에 오신 것을 환영합니다!</AuthSubTitle>
                 <InputGroup
                     label={"아이디"}
                     id={"username"}

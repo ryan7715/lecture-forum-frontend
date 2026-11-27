@@ -4,7 +4,7 @@
 // 그게 귀찮으니까 애초에 ""으로 논리합 처리해서 값이 없으면 ""이 변수에 들어가도록 함
 import * as axios from "axios";
 
-const BASE_URL = import.meta.env.BASE_URL || ""; // string화 함
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || ""; // string화 함
 
 const api = axios.create({
     baseURL: BASE_URL,        // 통신을 진행할 상대의 기본 주소 (필수)
